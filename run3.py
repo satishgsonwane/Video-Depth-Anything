@@ -94,9 +94,18 @@ if __name__ == '__main__':
     parser.add_argument('--save_npz', action='store_true', help='save depths as npz')
     parser.add_argument('--save_exr', action='store_true', help='save depths as exr')
 
+    parser.add_argument('--gpu_id', type=int, default=0, help='GPU ID to use (default: 0)')
     args = parser.parse_args()
 
-    DEVICE = 'cuda' if torch.cuda.is_available() else 'cpu'
+    if torch.cuda.is_available():
+        if args.gpu_id >= torch.cuda.device_count():
+            raise ValueError(f"GPU ID {args.gpu_id} is not available. Available GPUs: {torch.cuda.device_count()}")
+        torch.cuda.set_device(args.gpu_id)
+        DEVICE = f'cuda:{args.gpu_id}'
+        print(f"Using GPU {args.gpu_id}: {torch.cuda.get_device_name(args.gpu_id)}")
+    else:
+        DEVICE = 'cpu'
+        print("CUDA is not available. Using CPU.")
 
     model_configs = {
         'vits': {'encoder': 'vits', 'features': 64, 'out_channels': [48, 96, 192, 384]},
